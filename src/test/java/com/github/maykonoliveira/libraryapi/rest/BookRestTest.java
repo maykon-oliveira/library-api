@@ -1,13 +1,18 @@
 package com.github.maykonoliveira.libraryapi.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.maykonoliveira.libraryapi.entities.Book;
 import com.github.maykonoliveira.libraryapi.rest.dto.BookDto;
+import com.github.maykonoliveira.libraryapi.service.BookService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.BDDMockito;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -25,15 +30,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BookRestTest {
   String BOOK_API = "/api/books";
   @Autowired MockMvc mvc;
+  @MockBean BookService bookService;
+  private ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
   @DisplayName("Given a bookDto should save correctly")
   void saveBook() throws Exception {
-    BookDto dto = BookDto.builder().id(1L).isbn("123").build();
-    String json = new ObjectMapper().writeValueAsString(dto);
+    BookDto dto = BookDto.builder().isbn("123").build();
+    Book savedBook = Book.builder().id(1L).isbn("123").build();
+
+    BDDMockito.given(bookService.save(Mockito.any(Book.class))).willReturn(savedBook);
 
     MockHttpServletRequestBuilder request =
-        MockMvcRequestBuilders.post(BOOK_API).contentType(MediaType.APPLICATION_JSON).content(json);
+        MockMvcRequestBuilders.post(BOOK_API)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(dto));
 
     mvc.perform(request)
         .andExpect(status().isCreated())
